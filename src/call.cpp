@@ -63,6 +63,11 @@
 #include "config.h"
 #include "version.h"
 
+#define CKLEN 16
+typedef u_char CK[CKLEN];
+#define IKLEN 16
+typedef u_char IK[IKLEN];
+
 template<typename Out>
 void split(const std::string &s, char delim, Out result) {
     std::stringstream ss;
@@ -3965,6 +3970,14 @@ char* call::createSendingMessage(SendingMessage *src, int P_index, char *msg_buf
             dest += sprintf(dest, "%d", last_cseq + comp->offset);
             break;
         }
+        case E_Message_Ck_Key:
+            if (ck_key)
+                dest += sprintf(dest, "%s", ck_key);
+            break;
+        case E_Message_Ik_Key:
+            if (ik_key)
+                dest += sprintf(dest, "%s", ik_key);
+            break;
         case E_Message_TDM_Map:
             if (!use_tdmmap)
                 ERROR("[tdmmap] keyword without -tdmmap parameter on command line");
@@ -3976,6 +3989,7 @@ char* call::createSendingMessage(SendingMessage *src, int P_index, char *msg_buf
                             );
             break;
         }
+
     }
     /* Need the body for length and auth-int calculation */
     char *body = NULL;
@@ -5476,6 +5490,14 @@ bool call::process_incoming(const char* msg, const struct sockaddr_storage* src)
 
         /* is a challenge */
         char auth[MAX_HEADER_LEN];
+
+        char my_aka_K[17];
+        char result[1024];
+    
+        char ck[2*CKLEN];
+        char ik[2*IKLEN];
+        int cklen, iklen;
+
         memset(auth, 0, sizeof(auth));
         strncpy(auth, get_header_content(msg, (char*)"Proxy-Authenticate:"), sizeof(auth) - 1);
         if (auth[0] == 0) {
@@ -5494,8 +5516,30 @@ bool call::process_incoming(const char* msg, const struct sockaddr_storage* src)
             return false;
         }
 
-
         sprintf(dialog_authentication, "%s", auth);
+
+        memset(my_aka_K, 0, 17);
+        strncpy(my_aka_K, auth_password, 16);
+        my_aka_K[16]=0;
+
+        memset(ck, 0, 2*CKLEN);
+        memset(ik, 0, 2*IKLEN);
+
+        memset(result, 0, 1024);
+
+        if (getAKAkeys(dialog_authentication, my_aka_K, ck, &cklen, ik, &iklen, result)) {
+            if (ck_key) free(ck_key);
+            ck_key = (char *)malloc(cklen+1);
+            strncpy(ck_key, ck, cklen);
+            ck_key[cklen] = 0;
+
+            if (ik_key) free(ik_key);
+            ik_key = (char *)malloc(iklen+1);
+            strncpy(ik_key, ik, iklen);
+            ik_key[iklen] = 0;
+        } else {
+            ERROR("Error getting session keys: %s", result);
+        }
 
         /* Store the code of the challenge for building the proper header */
         dialog_challenge_type = reply_code;

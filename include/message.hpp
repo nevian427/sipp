@@ -88,6 +88,8 @@ typedef enum {
     E_Message_Custom,
     E_Message_RTPStream_Audio_Port,
     E_Message_RTPStream_Video_Port,
+    E_Message_Ik_Key,
+    E_Message_Ck_Key,
 #ifdef USE_TLS
     E_Message_CryptoTag1Audio,
     E_Message_CryptoTag2Audio,

@@ -210,6 +210,8 @@ MAYBE_EXTERN void             * monosocket_comp_state   DEFVAL(0);
 MAYBE_EXTERN const char       * service                 DEFVAL(DEFAULT_SERVICE);
 MAYBE_EXTERN const char       * auth_password           DEFVAL(DEFAULT_AUTH_PASSWORD);
 MAYBE_EXTERN const char       * auth_username           DEFVAL(0);
+MAYBE_EXTERN char             * ck_key                  DEFVAL(0);
+MAYBE_EXTERN char             * ik_key                  DEFVAL(0);
 MAYBE_EXTERN unsigned long      report_freq             DEFVAL(DEFAULT_REPORT_FREQ);
 MAYBE_EXTERN unsigned long      report_freq_dumpLog     DEFVAL
 (DEFAULT_REPORT_FREQ_DUMP_LOG);

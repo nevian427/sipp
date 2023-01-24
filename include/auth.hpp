@@ -31,3 +31,5 @@ int verifyAuthHeader(const char *user, const char *password,
                      const char *msgbody);
 int getAuthParameter(const char *name, const char *header, char *result,
                      int len);
+int getAKAkeys(const char* dialog_authentication, const char* aka_K,
+    char* ck, int* cklen, char* ik,  int* iklen, char* result);

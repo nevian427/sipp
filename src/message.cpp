@@ -118,6 +118,9 @@ struct KeywordMap SimpleKeywords[] = {
     {"timestamp", E_Message_Timestamp },
     {"date", E_Message_Date },
     {"sipp_version", E_Message_SippVersion },
+    {"ck_key", E_Message_Ck_Key },
+    {"ik_key", E_Message_Ik_Key },
+
 };
 
 #define KEYWORD_SIZE 256

@@ -89,6 +89,10 @@ static int createAuthHeaderAKAv1MD5(
     const char* auth, const char* algo, unsigned int nonce_count,
     char* result, size_t result_len);
 
+int getAKAkeys(
+    const char* dialog_authentication, const char* aka_K,
+    char* ck, int* cklen, char* ik,  int* iklen, char* result);
+
 
 /* This function is from RFC 2617 Section 5 */
 
@@ -768,6 +772,70 @@ static int createAuthHeaderAKAv1MD5(
     }
     free(nonce);
     return written;
+}
+
+/**
+ * Converts a binary encoded value to its base16 representation.
+ * @param from - buffer containing the input data
+ * @param len - the size of from
+ * @param to - the output buffer  !!! must have at least len*2 allocated memory 
+ * @returns the written length 
+ */
+static int bin_to_base16(unsigned char *from, int len, char *to)
+{
+    int i, j;
+    for(i=0, j=0; i<len; i++, j+=2){
+        to[j] = hexa[((from[i]) >>4 )&0x0F];
+        to[j+1] = hexa[((from[i]))&0x0F];
+    }   
+    return 2*len;
+}
+
+int getAKAkeys(
+    const char* dialog_authentication, const char* aka_K,
+    char* ck, int* cklen, char* ik,  int* iklen, char* result)
+{
+    char tmp[MAX_HEADER_LEN];
+    char *start, *end;
+    char *nonce64, *nonce;
+
+    int noncelen;
+    OP op;
+    RAND rnd;
+    K k;
+    RES res;
+    AK ak;
+    CK ckk;
+    IK ikk;
+    if ((start = stristr(dialog_authentication, "nonce=")) == NULL) {
+            snprintf(result, 255, "getAKAkeys: couldn't parse nonce");
+            return 0;
+    }
+    start = start + strlen("nonce=");
+    if (*start == '"') { start++; }
+    end = start + strcspn(start, " ,\"\r\n");
+    strncpy(tmp, start, end - start);
+    tmp[end - start] ='\0';
+    
+    /* Compute the AKA RES */
+    
+    nonce64 = tmp;
+    nonce = base64_decode_string(nonce64, end-start, &noncelen);
+    if (noncelen<RANDLEN+AUTNLEN) {
+        snprintf(result, 255, "getAKAkeys: Nonce is too short %d < %d expected \n", noncelen, RANDLEN+AUTNLEN);
+        return 0;
+    }
+    memcpy(rnd, nonce, RANDLEN);
+    memcpy(k, aka_K, KLEN);
+    memset(op, 0, OPLEN);
+    
+    /* Compute the AK, response and keys CK IK */
+    f2345(k, rnd, res, ckk, ikk, ak, op);
+    *cklen = bin_to_base16(ckk, CKLEN, ck);
+    *iklen = bin_to_base16(ikk, IKLEN, ik);
+    res[RESLEN]=0;
+    free(nonce);
+    return 1;
 }
 
 
