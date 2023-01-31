@@ -398,7 +398,9 @@ struct sipp_option options_table[] = {
     {"ringbuffer_files", "How many error, message, shortmessage and calldebug files should be kept after rotation?", SIPP_OPTION_INT, &ringbuffer_files, 1},
     {"ringbuffer_size", "How large should error, message, shortmessage and calldebug files be before they get rotated?", SIPP_OPTION_LONG_LONG, &ringbuffer_size, 1},
     {"max_log_size", "What is the limit for error, message, shortmessage and calldebug file sizes.", SIPP_OPTION_LONG_LONG, &max_log_size, 1},
-
+    {"auth_pipe", "Set the file for auth string - received in a 401 response and sent again with a response", SIPP_OPTION_STRING, &auth_pipe, 1},
+    {"response_type", "Set received response type (default 401).", SIPP_OPTION_INT, &response_type},
+    {"method_name", "Set method name (only for challenge for a 401 response - default value : REGISTER.", SIPP_OPTION_STRING, &method_name},
 };
 
 static struct sipp_option *find_option(const char* option) {

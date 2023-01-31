@@ -175,6 +175,8 @@ cmd messages are received */
 #define DEFAULT_MAX_RTP_PORT         65535
 #define DEFAULT_RTP_PAYLOAD          8
 #define DEFAULT_RTP_THREADTASKS      20
+#define DEFAULT_AUTH_PIPE            ((char *)"auth.pip")
+#define DEFAULT_METHOD_NAME          ((char *)"REGISTER")
 
 /************ User controls and command line options ***********/
 
@@ -212,6 +214,8 @@ MAYBE_EXTERN const char       * auth_password           DEFVAL(DEFAULT_AUTH_PASS
 MAYBE_EXTERN const char       * auth_username           DEFVAL(0);
 MAYBE_EXTERN char             * ck_key                  DEFVAL(0);
 MAYBE_EXTERN char             * ik_key                  DEFVAL(0);
+MAYBE_EXTERN int                response_type           DEFVAL(401);
+MAYBE_EXTERN char             * method_name             DEFVAL(DEFAULT_METHOD_NAME);
 MAYBE_EXTERN unsigned long      report_freq             DEFVAL(DEFAULT_REPORT_FREQ);
 MAYBE_EXTERN unsigned long      report_freq_dumpLog     DEFVAL
 (DEFAULT_REPORT_FREQ_DUMP_LOG);
@@ -331,6 +335,7 @@ MAYBE_EXTERN file_map inFiles;
 typedef std::map<string, str_int_map *> file_index;
 MAYBE_EXTERN char *ip_file DEFVAL(NULL);
 MAYBE_EXTERN char *default_file DEFVAL(NULL);
+MAYBE_EXTERN char *auth_pipe DEFVAL(DEFAULT_AUTH_PIPE);
 
 // free user id list
 MAYBE_EXTERN list<int> freeUsers;

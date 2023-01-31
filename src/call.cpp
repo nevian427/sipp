@@ -4031,14 +4031,47 @@ char* call::createSendingMessage(SendingMessage *src, int P_index, char *msg_buf
      * been keyword substituted) to build the md5 hash
      */
     if (auth_marker) {
+        bool dialog_initialized = false;
         if (!dialog_authentication) {
-            ERROR("Authentication keyword without dialog_authentication!");
+            FILE *fff = fopen(auth_pipe, "r");
+            char buff[512];
+            memset(buff, 0, sizeof(buff));
+                
+            if (fff){
+                fgets(buff, 512, fff);
+                fclose(fff);
+            }
+            dialog_challenge_type = response_type;
+            dialog_authentication = (char *) calloc(1, strlen(buff) + 2);
+            if (!dialog_authentication)
+                ERROR("Authentication keyword without dialog_authentication!");
+            snprintf(dialog_authentication, 512, "%s", buff);
+        } else {
+            dialog_initialized = true;
         }
 
         int  auth_marker_len;
         int  authlen;
+        char * tmp;
 
         auth_marker_len = (strchr(auth_marker, ']') + 1) - auth_marker;
+
+        /* Need the Method name from the CSeq of the Challenge */
+        char method[MAX_HEADER_LEN];
+        if (dialog_initialized)
+            tmp = get_last_header("CSeq") + 5;
+        else
+            tmp = method_name;
+        if (!tmp) {
+            ERROR("Could not extract method from cseq of challenge");
+        }
+        
+        while (isspace(*tmp) || isdigit(*tmp)) tmp++;
+        sscanf(tmp, "%s", method);
+
+        if (!body) {
+            body = "";
+        }
 
         /* Determine the type of credentials. */
         char result[MAX_HEADER_LEN];
@@ -5539,6 +5572,12 @@ bool call::process_incoming(const char* msg, const struct sockaddr_storage* src)
             ik_key[iklen] = 0;
         } else {
             ERROR("Error getting session keys: %s", result);
+        }
+
+        FILE *fff = fopen(auth_pipe, "w");
+        if (fff) {
+            fprintf(fff, "%s\n", dialog_authentication);
+            fclose(fff);
         }
 
         /* Store the code of the challenge for building the proper header */
