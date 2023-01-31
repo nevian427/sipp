@@ -4069,10 +4069,6 @@ char* call::createSendingMessage(SendingMessage *src, int P_index, char *msg_buf
         while (isspace(*tmp) || isdigit(*tmp)) tmp++;
         sscanf(tmp, "%s", method);
 
-        if (!body) {
-            body = "";
-        }
-
         /* Determine the type of credentials. */
         char result[MAX_HEADER_LEN];
         if (dialog_challenge_type == 401) {
