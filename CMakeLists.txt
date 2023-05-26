@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.1)
+cmake_minimum_required(VERSION 3.4)
 
 # set the project name
 project(SIPp)
@@ -8,7 +8,7 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_CXX_EXTENSIONS False)
 # specify the C++ standard on older CMake (<3.8)
-set(CMAKE_REQUIRED_FLAGS "-std=c++11")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Werror -pedantic -Wno-error=format-truncation -Wno-error=deprecated-declarations")
 
 # Include binary dir first, where we add generated config.h and
@@ -46,6 +46,11 @@ CHECK_SYMBOL_EXISTS(le16toh "sys/endian.h" HAVE_DECL_LE16TOH_BSD)
 
 configure_file("${PROJECT_SOURCE_DIR}/include/config.h.in"
                "${PROJECT_BINARY_DIR}/config.h" )
+
+if(BUILD_STATIC)
+  set(CMAKE_EXE_LINKER_FLAGS "-static-libgcc -static-libstdc++ -static")
+  set(CMAKE_FIND_LIBRARY_SUFFIXES .a ${CMAKE_FIND_LIBRARY_SUFFIXES})
+endif(BUILD_STATIC)
 
 list(REMOVE_ITEM all_SRCS
   "${PROJECT_SOURCE_DIR}/src/sipp_unittest.cpp")
@@ -119,20 +124,27 @@ endif(USE_SCTP)
 link_directories("/usr/local/lib")
 add_executable(sipp ${all_SRCS} "${PROJECT_SOURCE_DIR}/src/sipp.cpp")
 target_compile_features(sipp PUBLIC cxx_auto_type cxx_range_for)
-add_executable(sipp_unittest EXCLUDE_FROM_ALL
-  ${all_SRCS}
-  "${PROJECT_SOURCE_DIR}/src/sipp_unittest.cpp"
-  "${PROJECT_SOURCE_DIR}/gtest/googletest/src/gtest-all.cc"
-  "${PROJECT_SOURCE_DIR}/gtest/googlemock/src/gmock-all.cc"
-)
-target_compile_features(sipp_unittest PUBLIC cxx_auto_type cxx_range_for)
-target_compile_definitions(sipp_unittest PUBLIC "-DGTEST")
-target_include_directories(sipp_unittest SYSTEM PUBLIC
-  ${PROJECT_SOURCE_DIR}/gtest/googletest
-  ${PROJECT_SOURCE_DIR}/gtest/googlemock
-  ${PROJECT_SOURCE_DIR}/gtest/googletest/include
-  ${PROJECT_SOURCE_DIR}/gtest/googlemock/include
-)
+
+if(EXISTS ${PROJECT_SOURCE_DIR}/gtest/googletest)
+  add_executable(sipp_unittest EXCLUDE_FROM_ALL
+    ${all_SRCS}
+    "${PROJECT_SOURCE_DIR}/src/sipp_unittest.cpp"
+    "${PROJECT_SOURCE_DIR}/gtest/googletest/src/gtest-all.cc"
+    "${PROJECT_SOURCE_DIR}/gtest/googlemock/src/gmock-all.cc"
+  )
+  target_compile_features(sipp_unittest PUBLIC cxx_auto_type cxx_range_for)
+  target_compile_definitions(sipp_unittest PUBLIC "-DGTEST")
+  target_include_directories(sipp_unittest SYSTEM PUBLIC
+    ${PROJECT_SOURCE_DIR}/gtest/googletest
+    ${PROJECT_SOURCE_DIR}/gtest/googlemock
+    ${PROJECT_SOURCE_DIR}/gtest/googletest/include
+    ${PROJECT_SOURCE_DIR}/gtest/googlemock/include
+  )
+else()
+  add_executable(sipp_unittest EXCLUDE_FROM_ALL
+    ${all_SRCS}
+    "${PROJECT_SOURCE_DIR}/src/sipp_unittest.cpp")
+endif()
 
 # add version
 find_package(Git)
@@ -155,10 +167,6 @@ if(EXISTS ${PROJECT_SOURCE_DIR}/.git)
   add_dependencies(sipp version)
   add_dependencies(sipp_unittest version)
 endif()
-
-if(BUILD_STATIC)
-  set(CMAKE_EXE_LINKER_FLAGS "-static-libgcc -static-libstdc++ -static")
-endif(BUILD_STATIC)
 
 if(PKG_CONFIG_FOUND)
   pkg_search_module(CURSES_LIBRARY ncursesw cursesw ncurses curses)

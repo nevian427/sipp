@@ -467,7 +467,7 @@ static void traffic_thread(int &rtp_errors, int &echo_errors)
     char L_file_name[MAX_PATH];
     sprintf(L_file_name, "%s_%ld_screen.log", scenario_file, (long) getpid());
 
-    getmilliseconds();
+    update_clock_tick();
 
     /* Arm the global timer if needed */
     if (global_timeout > 0) {
@@ -482,7 +482,7 @@ static void traffic_thread(int &rtp_errors, int &echo_errors)
 
     while (1) {
         scheduling_loops++;
-        getmilliseconds();
+        update_clock_tick();
 
         if (signalDump) {
             /* Screen dumping in a file */
@@ -542,7 +542,7 @@ static void traffic_thread(int &rtp_errors, int &echo_errors)
             }
         }
 
-        getmilliseconds();
+        update_clock_tick();
 
         /* Schedule all pending calls and process their timers */
         task_list *running_tasks;
@@ -595,8 +595,7 @@ static void traffic_thread(int &rtp_errors, int &echo_errors)
             sockets_pending_reset.erase(sockets_pending_reset.begin());
         }
 
-        /* Update the clock. */
-        getmilliseconds();
+        update_clock_tick();
         /* Receive incoming messages */
         SIPpSocket::pollset_process(running_tasks->empty());
     }
@@ -1383,6 +1382,9 @@ int main(int argc, char *argv[])
             struct sipp_option *option = find_option(argv[argi]);
             if (!option) {
                 if (argv[argi][0] != '-') {
+                    if ((pass == 0) && (remote_host[0] != 0)) {
+                        ERROR("remote_host given multiple times on command-line (%s and %s)", remote_host, argv[argi]);
+                    }
                     strncpy(remote_host, argv[argi], sizeof(remote_host) - 1);
                     continue;
                 }
@@ -2123,9 +2125,7 @@ int main(int argc, char *argv[])
     setup_media_sockets();
 
     /* Creating the remote control socket thread */
-    if (rtp_echo_enabled) {
-        setup_ctrl_socket();
-    }
+    setup_ctrl_socket();
 
     if (!nostdin) {
         setup_stdin_socket();
